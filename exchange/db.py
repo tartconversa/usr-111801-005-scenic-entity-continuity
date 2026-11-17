@@ -49,6 +49,55 @@ CREATE TABLE IF NOT EXISTS audit (
     id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, actor TEXT NOT NULL,
     action TEXT NOT NULL, subject TEXT NOT NULL, details TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS identities (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL,
+    origin_event TEXT
+);
+CREATE TABLE IF NOT EXISTS lineage_events (
+    id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+    effective_at TEXT NOT NULL, source_ref TEXT NOT NULL,
+    recorded_at TEXT NOT NULL, actor TEXT NOT NULL,
+    supersedes TEXT, superseded_by TEXT, note TEXT
+);
+CREATE TABLE IF NOT EXISTS lineage_members (
+    event_id TEXT NOT NULL REFERENCES lineage_events(id),
+    identity_id TEXT NOT NULL REFERENCES identities(id),
+    role TEXT NOT NULL,
+    PRIMARY KEY(event_id,identity_id,role)
+);
+CREATE TABLE IF NOT EXISTS attributions (
+    asset_id TEXT NOT NULL REFERENCES assets(id),
+    identity_id TEXT NOT NULL REFERENCES identities(id),
+    scope TEXT NOT NULL, observed_at TEXT NOT NULL, recorded_at TEXT NOT NULL,
+    PRIMARY KEY(asset_id,identity_id,scope)
+);
+CREATE TABLE IF NOT EXISTS product_subjects (
+    product_id TEXT NOT NULL, product_revision INTEGER NOT NULL,
+    identity_id TEXT NOT NULL REFERENCES identities(id), scope TEXT NOT NULL,
+    PRIMARY KEY(product_id,product_revision),
+    FOREIGN KEY(product_id,product_revision) REFERENCES products(id,revision)
+);
+CREATE TABLE IF NOT EXISTS carryovers (
+    id TEXT PRIMARY KEY, product_id TEXT NOT NULL, product_revision INTEGER NOT NULL,
+    asset_id TEXT NOT NULL REFERENCES assets(id),
+    from_identity TEXT NOT NULL REFERENCES identities(id),
+    to_identity TEXT NOT NULL REFERENCES identities(id),
+    basis_event TEXT NOT NULL REFERENCES lineage_events(id),
+    scope TEXT NOT NULL, declared_at TEXT NOT NULL, actor TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS product_flags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id TEXT NOT NULL, product_revision INTEGER NOT NULL,
+    correction_event TEXT NOT NULL REFERENCES lineage_events(id),
+    reason TEXT NOT NULL, created_at TEXT NOT NULL,
+    resolved_at TEXT, resolver TEXT, resolution TEXT
+);
+CREATE TABLE IF NOT EXISTS decision_impacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id TEXT NOT NULL, product_revision INTEGER NOT NULL,
+    correction_event TEXT NOT NULL REFERENCES lineage_events(id),
+    reason TEXT NOT NULL, created_at TEXT NOT NULL
+);
 """
 
 

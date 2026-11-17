@@ -21,6 +21,8 @@ class Delivery:
                 raise ValueError("交付编号已用于其他请求")
             return dict(existing)
         product = self.connection.execute("SELECT state FROM products WHERE id=? AND revision=?", (product_id, revision)).fetchone()
+        if product is not None and product["state"] == "flagged":
+            raise ValueError("数据产品存在未处理的沿革纠正提示")
         if product is None or product["state"] != "draft":
             raise ValueError("数据产品修订不可交付")
         inputs = self.products.inputs(product_id, revision)
